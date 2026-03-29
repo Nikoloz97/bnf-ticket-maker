@@ -182,7 +182,7 @@ export async function getAllTickets(): Promise<ParsedTicket[]> {
   const result = await db.execute(
     `SELECT ${TICKET_COLS} FROM tickets ORDER BY created_at DESC`,
   );
-  return result.rows.map((row: TicketRow) => ({
+  return result.rows.map((row: any) => ({
     ...row,
     areas: JSON.parse(row.areas || "[]"),
     blockers: JSON.parse(row.blockers || "[]"),
@@ -197,11 +197,12 @@ export async function getTicketById(id: number): Promise<ParsedTicket | null> {
     args: [id],
   });
   if (result.rows.length === 0) return null;
+  const row: any = result.rows[0];
   return {
-    ...result.rows[0],
-    areas: JSON.parse(result.rows[0].areas || "[]"),
-    blockers: JSON.parse(result.rows[0].blockers || "[]"),
-    screenshots: JSON.parse(result.rows[0].screenshots || "[]"),
+    ...row,
+    areas: JSON.parse(row.areas || "[]"),
+    blockers: JSON.parse(row.blockers || "[]"),
+    screenshots: JSON.parse(row.screenshots || "[]"),
   };
 }
 
@@ -213,7 +214,7 @@ export async function getTicketsByIds(ids: number[]): Promise<ParsedTicket[]> {
     sql: `SELECT ${TICKET_COLS} FROM tickets WHERE id IN (${placeholders})`,
     args: ids,
   });
-  return result.rows.map((row: TicketRow) => ({
+  return result.rows.map((row: any) => ({
     ...row,
     areas: JSON.parse(row.areas || "[]"),
     blockers: JSON.parse(row.blockers || "[]"),
@@ -229,7 +230,7 @@ export async function getTicketsByEpicId(
     sql: `SELECT ${TICKET_COLS} FROM tickets WHERE epic_id = ? ORDER BY created_at DESC`,
     args: [epicId],
   });
-  return result.rows.map((row: TicketRow) => ({
+  return result.rows.map((row: any) => ({
     ...row,
     areas: JSON.parse(row.areas || "[]"),
     blockers: JSON.parse(row.blockers || "[]"),
@@ -344,7 +345,7 @@ export async function getTicketSummaries(): Promise<
   const result = await db.execute(
     `SELECT id, title FROM tickets ORDER BY id DESC`,
   );
-  return result.rows as Array<{ id: number; title: string }>;
+  return result.rows as unknown as Array<{ id: number; title: string }>;
 }
 
 // ─── Epic helpers ─────────────────────────────────────────────────────────────
@@ -364,13 +365,13 @@ export async function getAllEpics(): Promise<ParsedEpicWithTickets[]> {
   );
 
   const epics = await Promise.all(
-    epicResult.rows.map(async (row: EpicRow) => {
+    epicResult.rows.map(async (row: any) => {
       const epic = parseEpic(row);
       const ticketResult = await db.execute({
         sql: `SELECT id, title, priority FROM tickets WHERE epic_id = ? ORDER BY created_at DESC`,
         args: [epic.id],
       });
-      const tickets = ticketResult.rows as Array<{
+      const tickets = ticketResult.rows as unknown as Array<{
         id: number;
         title: string;
         priority: "Urgent" | "Important" | "Backlog";
@@ -396,7 +397,7 @@ export async function getEpicById(
     sql: `SELECT id, title, priority FROM tickets WHERE epic_id = ? ORDER BY created_at DESC`,
     args: [id],
   });
-  const tickets = ticketResult.rows as Array<{
+  const tickets = ticketResult.rows as unknown as Array<{
     id: number;
     title: string;
     priority: "Urgent" | "Important" | "Backlog";
@@ -485,7 +486,7 @@ export async function getEpicSummaries(): Promise<
   const result = await db.execute(
     `SELECT id, title FROM epics ORDER BY title ASC`,
   );
-  return result.rows as Array<{ id: number; title: string }>;
+  return result.rows as unknown as Array<{ id: number; title: string }>;
 }
 
 // ─── User helpers ─────────────────────────────────────────────────────────────
@@ -495,7 +496,7 @@ export async function getAllUsers(): Promise<User[]> {
   const result = await db.execute(
     `SELECT id, name, created_at FROM users ORDER BY name ASC`,
   );
-  return result.rows as User[];
+  return result.rows as unknown as User[];
 }
 
 export async function getUserById(id: number): Promise<User | null> {
@@ -504,7 +505,7 @@ export async function getUserById(id: number): Promise<User | null> {
     sql: `SELECT id, name, created_at FROM users WHERE id = ?`,
     args: [id],
   });
-  return result.rows.length > 0 ? (result.rows[0] as User) : null;
+  return result.rows.length > 0 ? (result.rows[0] as unknown as User) : null;
 }
 
 export async function createUser(name: string): Promise<User> {

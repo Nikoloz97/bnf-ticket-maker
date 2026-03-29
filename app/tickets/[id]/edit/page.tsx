@@ -25,6 +25,7 @@ interface ParsedTicket {
   priority: "Urgent" | "Important" | "Backlog";
   difficulty: number;
   progress: "Not Started" | "In Progress" | "Completed";
+  resolution: string | null;
   blockers: number[];
   screenshots: string[];
   epic_id: number | null;
@@ -480,17 +481,25 @@ export default function EditTicketPage() {
 
         {/* Resolution */}
         <div>
-          <label className={`block text-sm font-medium mb-1.5 ${progress === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
+          <label
+            className={`block text-sm font-medium mb-1.5 ${progress === "Completed" ? "text-slate-700" : "text-slate-400"}`}
+          >
             Resolution
             <span className="ml-2 text-xs font-normal text-slate-400">
-              {progress === "Completed" ? "(optional)" : "(available when Completed)"}
+              {progress === "Completed"
+                ? "(optional)"
+                : "(available when Completed)"}
             </span>
           </label>
           <textarea
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
             disabled={progress !== "Completed"}
-            placeholder={progress === "Completed" ? "Describe how this ticket was resolved…" : "Set progress to Completed to add a resolution…"}
+            placeholder={
+              progress === "Completed"
+                ? "Describe how this ticket was resolved…"
+                : "Set progress to Completed to add a resolution…"
+            }
             rows={3}
             className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors resize-y ${
               progress !== "Completed"
