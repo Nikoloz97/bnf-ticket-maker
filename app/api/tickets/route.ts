@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllTickets, createTicket, createAudit } from "@/lib/db";
-import path from "path";
-import fs from "fs";
 
 export const dynamic = "force-dynamic";
 
@@ -58,26 +56,6 @@ export async function POST(request: NextRequest) {
     const blockers: number[] = blockersRaw ? JSON.parse(blockersRaw) : [];
     const epicId = epicIdRaw ? parseInt(epicIdRaw, 10) : null;
 
-    // Handle screenshot uploads
-    const screenshotPaths: string[] = [];
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const screenshotFiles = formData.getAll("screenshots") as File[];
-    for (const file of screenshotFiles) {
-      if (file && file.size > 0) {
-        const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const filePath = path.join(uploadsDir, safeName);
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        fs.writeFileSync(filePath, buffer);
-        screenshotPaths.push(`/uploads/${safeName}`);
-      }
-    }
-
     const VALID_PROGRESS = ["Not Started", "In Progress", "Completed"];
     const ticket = await createTicket({
       title: title.trim(),
@@ -92,7 +70,7 @@ export async function POST(request: NextRequest) {
         : "Not Started",
       resolution: resolution?.trim() || null,
       blockers,
-      screenshots: screenshotPaths,
+      screenshots: [],
       epic_id: epicId && !isNaN(epicId) ? epicId : null,
     });
 

@@ -42,8 +42,6 @@ function diffTickets(before: ParsedTicket, after: ParsedTicket): AuditChanges {
   }
   return changes;
 }
-import path from "path";
-import fs from "fs";
 
 export const dynamic = "force-dynamic";
 
@@ -120,36 +118,8 @@ export async function PATCH(
     const areas: string[] = areasRaw ? JSON.parse(areasRaw) : [];
     const blockers: number[] = blockersRaw ? JSON.parse(blockersRaw) : [];
     const epicId = epicIdRaw ? parseInt(epicIdRaw, 10) : null;
-    const keptScreenshots: string[] = existingScreenshotsRaw
-      ? JSON.parse(existingScreenshotsRaw)
-      : [];
 
     const VALID_PROGRESS = ["Not Started", "In Progress", "Completed"];
-
-    // Handle new screenshot uploads
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadsDir))
-      fs.mkdirSync(uploadsDir, { recursive: true });
-
-    const newScreenshotPaths: string[] = [];
-    const screenshotFiles = formData.getAll("screenshots") as File[];
-    for (const file of screenshotFiles) {
-      if (file && file.size > 0) {
-        const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const filePath = path.join(uploadsDir, safeName);
-        fs.writeFileSync(filePath, Buffer.from(await file.arrayBuffer()));
-        newScreenshotPaths.push(`/uploads/${safeName}`);
-      }
-    }
-
-    // Delete screenshot files that were removed
-    for (const oldPath of existing.screenshots) {
-      if (!keptScreenshots.includes(oldPath)) {
-        const fullPath = path.join(process.cwd(), "public", oldPath);
-        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-      }
-    }
 
     const ticket = await updateTicket(id, {
       title,
@@ -164,7 +134,7 @@ export async function PATCH(
         : "Not Started",
       resolution: resolution?.trim() || null,
       blockers,
-      screenshots: [...keptScreenshots, ...newScreenshotPaths],
+      screenshots: [],
       epic_id: epicId && !isNaN(epicId) ? epicId : null,
     });
 
@@ -206,12 +176,6 @@ export async function DELETE(
       ticket_id: id,
       modification: "delete",
     });
-
-    // Clean up screenshot files from disk
-    for (const screenshotPath of existing.screenshots) {
-      const fullPath = path.join(process.cwd(), "public", screenshotPath);
-      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-    }
 
     await deleteTicket(id);
     return new NextResponse(null, { status: 204 });

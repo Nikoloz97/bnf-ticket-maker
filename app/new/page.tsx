@@ -58,8 +58,6 @@ export default function NewTicketPage() {
   const [resolution, setResolution] = useState("");
   const [selectedBlockers, setSelectedBlockers] = useState<number[]>([]);
   const [epicId, setEpicId] = useState<string>("");
-  const [screenshots, setScreenshots] = useState<File[]>([]);
-  const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>([]);
 
   // UI state
   const [errors, setErrors] = useState<FormErrors>({});
@@ -70,7 +68,6 @@ export default function NewTicketPage() {
   const [blockerSearch, setBlockerSearch] = useState("");
   const [blockerDropdownOpen, setBlockerDropdownOpen] = useState(false);
   const blockerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/ticket-summaries")
@@ -129,26 +126,6 @@ export default function NewTicketPage() {
     setSelectedBlockers((prev) => prev.filter((b) => b !== id));
   };
 
-  const handleFileChange = useCallback((files: FileList | null) => {
-    if (!files) return;
-    const newFiles = Array.from(files).filter((f) =>
-      f.type.startsWith("image/"),
-    );
-    setScreenshots((prev) => [...prev, ...newFiles]);
-    newFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setScreenshotPreviews((prev) => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-  }, []);
-
-  const removeScreenshot = (index: number) => {
-    setScreenshots((prev) => prev.filter((_, i) => i !== index));
-    setScreenshotPreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     if (!title.trim()) newErrors.title = "Title is required";
@@ -178,7 +155,6 @@ export default function NewTicketPage() {
       formData.append("areas", JSON.stringify(selectedAreas));
       formData.append("blockers", JSON.stringify(selectedBlockers));
       if (epicId) formData.append("epic_id", epicId);
-      screenshots.forEach((file) => formData.append("screenshots", file));
 
       const res = await fetch("/api/tickets", {
         method: "POST",
@@ -358,17 +334,25 @@ export default function NewTicketPage() {
 
         {/* Resolution */}
         <div>
-          <label className={`block text-sm font-medium mb-1.5 ${progress === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
+          <label
+            className={`block text-sm font-medium mb-1.5 ${progress === "Completed" ? "text-slate-700" : "text-slate-400"}`}
+          >
             Resolution
             <span className="ml-2 text-xs font-normal text-slate-400">
-              {progress === "Completed" ? "(optional)" : "(available when Completed)"}
+              {progress === "Completed"
+                ? "(optional)"
+                : "(available when Completed)"}
             </span>
           </label>
           <textarea
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
             disabled={progress !== "Completed"}
-            placeholder={progress === "Completed" ? "Describe how this ticket was resolved…" : "Set progress to Completed to add a resolution…"}
+            placeholder={
+              progress === "Completed"
+                ? "Describe how this ticket was resolved…"
+                : "Set progress to Completed to add a resolution…"
+            }
             rows={3}
             className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors resize-y ${
               progress !== "Completed"
@@ -651,76 +635,6 @@ export default function NewTicketPage() {
               ))}
             </select>
           )}
-        </div>
-
-        {/* Screenshots */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Screenshots
-          </label>
-
-          {screenshotPreviews.length > 0 && (
-            <div className="flex flex-wrap gap-3 mb-3">
-              {screenshotPreviews.map((src, index) => (
-                <div key={index} className="relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={src}
-                    alt={`Screenshot ${index + 1}`}
-                    className="w-24 h-24 object-cover rounded-lg border border-slate-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeScreenshot(index)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              handleFileChange(e.dataTransfer.files);
-            }}
-            className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center cursor-pointer hover:border-brand-300 hover:bg-brand-50/30 transition-colors"
-          >
-            <svg
-              className="w-8 h-8 mx-auto text-slate-300 mb-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <p className="text-sm text-slate-500">
-              <span className="text-brand-600 font-medium">
-                Click to upload
-              </span>{" "}
-              or drag and drop
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              PNG, JPG, GIF up to any size
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => handleFileChange(e.target.files)}
-            />
-          </div>
         </div>
 
         {/* Submit */}
