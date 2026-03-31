@@ -14,6 +14,12 @@ interface Ticket {
   created_at: string;
   description: string;
   progress: "Not Started" | "In Progress" | "Completed";
+  epic_id: number | null;
+}
+
+interface Epic {
+  id: number;
+  title: string;
 }
 
 const PRESET_AREAS = [
@@ -29,14 +35,17 @@ const PRESET_AREAS = [
 
 interface TicketListClientProps {
   initialTickets: Ticket[];
+  initialEpics: Epic[];
 }
 
 export default function TicketListClient({
   initialTickets,
+  initialEpics,
 }: TicketListClientProps) {
   const [priorityFilter, setPriorityFilter] = useState<string>("");
   const [areaFilter, setAreaFilter] = useState<string>("");
   const [progressFilter, setProgressFilter] = useState<string>("");
+  const [epicFilter, setEpicFilter] = useState<string>("");
   const [search, setSearch] = useState<string>("");
 
   const allAreas = useMemo(() => {
@@ -45,11 +54,22 @@ export default function TicketListClient({
     return Array.from(areaSet).sort();
   }, [initialTickets]);
 
+  const epicMap = useMemo(() => {
+    const map = new Map<number, string>();
+    initialEpics.forEach((e) => map.set(e.id, e.title));
+    return map;
+  }, [initialEpics]);
+
   const filtered = useMemo(() => {
     return initialTickets.filter((ticket) => {
       if (priorityFilter && ticket.priority !== priorityFilter) return false;
       if (areaFilter && !ticket.areas.includes(areaFilter)) return false;
       if (progressFilter && ticket.progress !== progressFilter) return false;
+      if (epicFilter) {
+        if (epicFilter === "none") {
+          if (ticket.epic_id !== null) return false;
+        } else if (ticket.epic_id !== Number(epicFilter)) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         if (
@@ -62,7 +82,7 @@ export default function TicketListClient({
       }
       return true;
     });
-  }, [initialTickets, priorityFilter, areaFilter, progressFilter, search]);
+  }, [initialTickets, priorityFilter, areaFilter, progressFilter, epicFilter, search]);
 
   const counts = useMemo(() => {
     return {
@@ -215,12 +235,28 @@ export default function TicketListClient({
             <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
           </select>
-          {(priorityFilter || areaFilter || progressFilter || search) && (
+          {initialEpics.length > 0 && (
+            <select
+              value={epicFilter}
+              onChange={(e) => setEpicFilter(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-slate-700"
+            >
+              <option value="">All Epics</option>
+              <option value="none">No Epic</option>
+              {initialEpics.map((epic) => (
+                <option key={epic.id} value={String(epic.id)}>
+                  {epic.title}
+                </option>
+              ))}
+            </select>
+          )}
+          {(priorityFilter || areaFilter || progressFilter || epicFilter || search) && (
             <button
               onClick={() => {
                 setPriorityFilter("");
                 setAreaFilter("");
                 setProgressFilter("");
+                setEpicFilter("");
                 setSearch("");
               }}
               className="text-sm text-slate-500 hover:text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors whitespace-nowrap"
@@ -285,6 +321,7 @@ export default function TicketListClient({
               setPriorityFilter("");
               setAreaFilter("");
               setProgressFilter("");
+              setEpicFilter("");
               setSearch("");
             }}
             className="mt-3 text-sm text-brand-600 hover:text-brand-700 font-medium"
@@ -295,7 +332,11 @@ export default function TicketListClient({
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filtered.map((ticket) => (
-            <TicketCard key={ticket.id} ticket={ticket} />
+            <TicketCard
+              key={ticket.id}
+              ticket={ticket}
+              epicName={ticket.epic_id ? epicMap.get(ticket.epic_id) : undefined}
+            />
           ))}
         </div>
       )}

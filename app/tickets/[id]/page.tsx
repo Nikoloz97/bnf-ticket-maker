@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getTicketById, getTicketsByIds } from "@/lib/db";
+import { getTicketById, getTicketsByIds, getEpicById } from "@/lib/db";
 import PriorityBadge from "@/components/PriorityBadge";
 import DifficultyDots from "@/components/DifficultyDots";
 import AreaTag from "@/components/AreaTag";
@@ -30,7 +30,10 @@ export default async function TicketDetailPage({ params }: PageProps) {
   const ticket = await getTicketById(id);
   if (!ticket) notFound();
 
-  const blockerTickets = await getTicketsByIds(ticket.blockers);
+  const [blockerTickets, epic] = await Promise.all([
+    getTicketsByIds(ticket.blockers),
+    ticket.epic_id ? getEpicById(ticket.epic_id) : Promise.resolve(null),
+  ]);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -60,6 +63,11 @@ export default async function TicketDetailPage({ params }: PageProps) {
               #{ticket.id}
             </span>
             <PriorityBadge priority={ticket.priority} size="md" />
+            {epic && (
+              <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                {epic.title}
+              </span>
+            )}
           </div>
           <h1 className="text-xl font-bold text-slate-900 leading-snug">
             {ticket.title}

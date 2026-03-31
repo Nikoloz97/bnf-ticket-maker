@@ -486,7 +486,7 @@ export async function getEpicSummaries(): Promise<
   const result = await db.execute(
     `SELECT id, title FROM epics ORDER BY title ASC`,
   );
-  return result.rows as unknown as Array<{ id: number; title: string }>;
+  return result.rows.map((row: any) => ({ id: row.id as number, title: row.title as string }));
 }
 
 // ─── User helpers ─────────────────────────────────────────────────────────────

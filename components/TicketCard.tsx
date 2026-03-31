@@ -14,6 +14,7 @@ interface TicketCardProps {
     created_at: string;
     description: string;
   };
+  epicName?: string;
 }
 
 function formatDate(dateString: string): string {
@@ -25,7 +26,7 @@ function formatDate(dateString: string): string {
   }).format(date);
 }
 
-export default function TicketCard({ ticket }: TicketCardProps) {
+export default function TicketCard({ ticket, epicName }: TicketCardProps) {
   return (
     <Link href={`/tickets/${ticket.id}`} className="block group">
       <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-brand-300 hover:shadow-md transition-all duration-150 group-hover:shadow-brand-100">
@@ -34,6 +35,11 @@ export default function TicketCard({ ticket }: TicketCardProps) {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-mono text-slate-400">#{ticket.id}</span>
               <PriorityBadge priority={ticket.priority} />
+              {epicName && (
+                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                  {epicName}
+                </span>
+              )}
             </div>
             <h3 className="text-base font-semibold text-slate-900 group-hover:text-brand-700 transition-colors truncate">
               {ticket.title}

@@ -1,9 +1,9 @@
-import { getAllTickets } from "@/lib/db";
+import { getAllTickets, getEpicSummaries } from "@/lib/db";
 import TicketListClient from "./TicketListClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const tickets = await getAllTickets();
-  return <TicketListClient initialTickets={tickets} />;
+  const [tickets, epics] = await Promise.all([getAllTickets(), getEpicSummaries()]);
+  return <TicketListClient initialTickets={tickets} initialEpics={epics} />;
 }
